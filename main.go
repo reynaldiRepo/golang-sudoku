@@ -118,8 +118,9 @@ func handleRequestSudoku(c *gin.Context) {
 	err := c.BindJSON(data)
 	if err != nil {
 		c.JSON(400, gin.H{
-			"message": "Invalid input",
-			"err":     err.Error(),
+			"is_solved" : false,
+			"message": err.Error(),
+			"note" : "input should be json request of array with size 9 x 9 inside 'Input' key",
 		})
 		return
 	}
@@ -128,7 +129,7 @@ func handleRequestSudoku(c *gin.Context) {
 	//check if input valid sudoku board
 	if !isBoardValid(data.Input) {
 		c.JSON(200, gin.H{
-			"IsSolved": false,
+			"is_solved": false,
 			"message":  "Board size is invalid",
 			"sudoku":   data.Input,
 		})
@@ -141,8 +142,8 @@ func handleRequestSudoku(c *gin.Context) {
 			if !isValidValue(data.Input, i, j, data.Input[i][j]) && data.Input[i][j] != 0 {
 				fmt.Println(isValidValue(data.Input, i, j, data.Input[i][j]))
 				c.JSON(200, gin.H{
-					"IsSolved": false,
-					"message":  fmt.Sprintf("Value %d is invalid at row %d, col %d", data.Input[i][j], i, j),
+					"is_solved": false,
+					"message":  fmt.Sprintf("value %d is invalid at (row %d , col %d )", data.Input[i][j], i, j),
 					"sudoku":   data.Input,
 				})
 				return
@@ -152,7 +153,7 @@ func handleRequestSudoku(c *gin.Context) {
 
 	SolvedSudoku, isSolved, message := solveSudoku(data.Input)
 	c.JSON(200, gin.H{
-		"IsSolved": isSolved,
+		"is_solved": isSolved,
 		"message":  message,
 		"sudoku":   SolvedSudoku,
 	})
