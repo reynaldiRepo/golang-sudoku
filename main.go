@@ -34,20 +34,21 @@ func isSolved(board [][]int) bool {
 //check is valid value
 func isValidValue(board [][]int, row int, col int, value int) bool {
 	for i := 0; i < len(board); i++ {
-		if board[row][i] == value {
+		if board[row][i] == value && i != col {
 			return false
 		}
 	}
 	for i := 0; i < len(board[row]); i++ {
-		if board[i][col] == value {
+		if board[i][col] == value && i != row {
 			return false
 		}
 	}
+
 	rowStart := (row / 3) * 3
 	colStart := (col / 3) * 3
 	for i := rowStart; i < rowStart+3; i++ {
 		for j := colStart; j < colStart+3; j++ {
-			if board[i][j] == value {
+			if board[i][j] == value && i != row && j != col {
 				return false
 			}
 		}
@@ -123,6 +124,32 @@ func handleRequestSudoku(c *gin.Context) {
 		return
 	}
 	fmt.Println("input data", data.Input)
+
+	//check if input valid sudoku board
+	if !isBoardValid(data.Input) {
+		c.JSON(200, gin.H{
+			"IsSolved": false,
+			"message":  "Board size is invalid",
+			"sudoku":   data.Input,
+		})
+		return
+	}
+
+	//check if input has invalid values
+	for i := 0; i < len(data.Input); i++ {
+		for j := 0; j < len(data.Input[i]); j++ {
+			if !isValidValue(data.Input, i, j, data.Input[i][j]) && data.Input[i][j] != 0 {
+				fmt.Println(isValidValue(data.Input, i, j, data.Input[i][j]))
+				c.JSON(200, gin.H{
+					"IsSolved": false,
+					"message":  fmt.Sprintf("Value %d is invalid at row %d, col %d", data.Input[i][j], i, j),
+					"sudoku":   data.Input,
+				})
+				return
+			}
+		}
+	}
+
 	SolvedSudoku, isSolved, message := solveSudoku(data.Input)
 	c.JSON(200, gin.H{
 		"IsSolved": isSolved,
@@ -132,31 +159,13 @@ func handleRequestSudoku(c *gin.Context) {
 }
 
 func main() {
-
-	//==============test run sudoku function on first run===================
-	board := [][]int{
-		{0, 3, 0, 0, 0, 0, 8, 0, 0},
-		{0, 0, 6, 0, 0, 0, 0, 4, 2},
-		{2, 0, 8, 6, 7, 0, 3, 0, 5},
-		{8, 5, 0, 0, 1, 0, 6, 2, 0},
-		{0, 0, 7, 0, 0, 0, 9, 0, 0},
-		{0, 4, 9, 0, 5, 0, 0, 1, 8},
-		{9, 0, 5, 0, 4, 7, 2, 0, 6},
-		{3, 7, 0, 0, 0, 6, 4, 0, 0},
-		{0, 0, 1, 0, 0, 0, 0, 7, 0},
-	}
-	fmt.Println("Testing Solvig sudoku...", board)
-	SolvedSudoku, _, _ := solveSudoku(board)
-	fmt.Println("Testing Solved sudoku...", SolvedSudoku)
-	//============= test run sudoku function on run
-
 	r := gin.Default()
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  "OK",
 			"massage": "Reynaldi Backend Developer Test",
 			"Task":    "Create API for solving sudoku problem @idn_media",
-			"Note":    "API endpoint for solving sudoku at /sudoku, input should be json request of array with size 9 x9",
+			"Note":    "API endpoint for solving sudoku at /sudoku, input should be json request of array with size 9 x 9",
 		})
 	})
 
